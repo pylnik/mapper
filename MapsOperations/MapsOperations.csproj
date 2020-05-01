@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Itinero" Version="1.5.0" />
+    <PackageReference Include="Itinero.IO.Osm" Version="1.5.0" />
+    <PackageReference Include="Itinero.IO.Shape" Version="1.5.0" />
+    <PackageReference Include="NetTopologySuite" Version="1.15.1" />
+    <PackageReference Include="NetTopologySuite.IO.ShapeFile" Version="1.15.3" />
+    <PackageReference Include="OsmSharp" Version="6.2.0" />
+    <PackageReference Include="OsmSharp.Geo" Version="6.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Device">
+      <HintPath>C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\System.Device.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
