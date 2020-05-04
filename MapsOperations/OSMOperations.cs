@@ -1,10 +1,16 @@
-﻿using Itinero;
+﻿using GeoAPI.Geometries;
+using GeoDatabase;
+using Itinero;
 using Itinero.IO.Osm;
 using Itinero.IO.Shape;
 using Itinero.Osm.Vehicles;
+using NetTopologySuite;
+using NetTopologySuite.Features;
+using NetTopologySuite.IO;
 using OsmSharp;
 using OsmSharp.Streams;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -59,43 +65,63 @@ namespace MapsOperations
             }
         }
 
-        public void ImportOSM(string pathToXML, string importToPath)
+        public OsmStreamSource ImportOSMXML(Stream streamToImport)
         {
-            using (var fileStream = File.OpenRead(pathToXML))
+            return new XmlOsmStreamSource(streamToImport);
+        }
+        public OsmStreamSource ImportOSMPBF(Stream streamToImport)
+        {
+            return new PBFOsmStreamSource(streamToImport);
+        }
+        public void ImportOSM(string pathToOSM, DBLayer dal, bool forceIfTableEmpty = false)
+        {
+            using (var fileStream = File.OpenRead(pathToOSM))
             {
                 // create source stream.
-                //var source = new PBFOsmStreamSource(fileStream);
-                var source = new XmlOsmStreamSource(fileStream);
-                // filter all powerlines and keep all nodes.
-                var filtered = from osmGeo in source
-                               where
-                                    osmGeo.Type == OsmSharp.OsmGeoType.Node
-                                    && osmGeo.Tags != null
-                                    && osmGeo.Tags.Contains("highway", "crossing")
-                                    && osmGeo is Node
-                                    && ((Node)osmGeo).Longitude.HasValue
-                                    && ((Node)osmGeo).Latitude.HasValue
-                               select new PointF((float)((Node)osmGeo).Latitude, (float)((Node)osmGeo).Longitude);
+                OsmStreamSource source;
+                if (Path.GetExtension(pathToOSM).ToLower().Contains("pbf"))
+                    source = ImportOSMPBF(fileStream);
+                else
+                    source = ImportOSMXML(fileStream);
 
-                var Flist = filtered.ToList();
-
-                using (var sw = File.CreateText(importToPath))
-                {
-                    foreach (var coord in Flist)
-                    {
-                        sw.WriteLine($"{coord.X} {coord.Y}");
-                    }
-                }
-
-                // convert to complete stream.
-                // WARNING: nodes that are partof powerlines will be kept in-memory.
-                //          it's important to filter only the objects you need **before** 
-                //          you convert to a complete stream otherwise all objects will 
-                //          be kept in-memory.
-                //var complete = filtered.ToComplete();
-
+                dal.ImportNodes(source, true);
+                dal.ImportWays(source);
             }
         }
+        public void SaveToShape(DBLayer dBLayer, string shapeFileName)
+        {
+            string firstNameAttribute = "firstname";
+            string lastNameAttribute = "lastname";
 
+            //create geometry factory
+            IGeometryFactory geomFactory = NtsGeometryServices.Instance.CreateGeometryFactory();
+
+            //create the default table with fields - alternately use DBaseField classes
+            AttributesTable t1 = new AttributesTable();
+            t1.AddAttribute(firstNameAttribute, "1");
+            t1.AddAttribute(lastNameAttribute, "2");
+
+
+            IList<Feature> features = new List<Feature>();
+
+            var nodes = dBLayer.GetBoundNodes();
+            int counter = 0;
+            foreach (var node in nodes)
+            {
+                foreach (var ngb in node.NeighbourNodes)
+                {
+                    var line = geomFactory.CreateLineString(new[] { new Coordinate(node.Latitude, node.Longitude), new Coordinate(ngb.Latitude, ngb.Longitude) });
+                    Feature feat = new Feature(line, t1);
+                    features.Add(feat);
+                }
+            }
+
+            var writer = new ShapefileDataWriter(shapeFileName)
+            {
+                Header = ShapefileDataWriter.GetHeader(features[0], features.Count)
+            };
+            writer.Write(features);
+
+        }
     }
 }
