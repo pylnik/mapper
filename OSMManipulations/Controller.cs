@@ -8,6 +8,7 @@ using System.Linq;
 using OsmSharp.Streams;
 using Itinero;
 using GeoDatabase;
+using osm_importer;
 
 namespace OSMManipulations
 {
@@ -21,14 +22,16 @@ namespace OSMManipulations
         string RouterDbAreaFileName = GetFullFileName(@"area.routedb");
         DBLayer _dBLayer;
         OSMOperations _osmOperations = new OSMOperations();
+        MapBoundingBox _areaOfInterest = new MapBoundingBox { MinLat = 49.2068, MaxLat = 49.2579, MinLon = 6.9097, MaxLon = 7.0445 };
         public async Task Do()
         {
+#warning works
+            if (!File.Exists(MapperDBFileName))
+                using (_dBLayer = new DBLayer(MapperDBFileName))
+                    await Task.Run(() => _osmOperations.ImportOSM(PDBFileName, _dBLayer, mapBoundingBox: _areaOfInterest));
             //var liteDb = new LiteDBDriver(MapperDBFileName);
             using (_dBLayer = new DBLayer(MapperDBFileName))
             {
-#warning works
-                //if (!File.Exists(MapperDBFileName))
-                //    await Task.Run(() => _osmOperations.ImportOSM(PDBFileName, _dBLayer));
 
                 _osmOperations.SaveToShape(_dBLayer, GetFullFileName("test.shp"));
                 //var db = _dBLayer.GeoContext;

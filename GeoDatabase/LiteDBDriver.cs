@@ -30,7 +30,14 @@ namespace GeoDatabase
             var col = GetNodesCollection(_liteDB);
             col.EnsureIndex(n => n.OSMId);
         }
-
+        public void DeleteNodes(IEnumerable<GeoNode> nodes)
+        {
+            var col = GetNodesCollection(_liteDB);
+            foreach (var node in nodes)
+            {
+                col.Delete(node);
+            }
+        }
         public IEnumerable<GeoNode> GetAllNodes()
         {
             var col = GetNodesCollection(_liteDB);

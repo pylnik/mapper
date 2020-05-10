@@ -7,6 +7,7 @@ using Itinero.Osm.Vehicles;
 using NetTopologySuite;
 using NetTopologySuite.Features;
 using NetTopologySuite.IO;
+using osm_importer;
 using OsmSharp;
 using OsmSharp.Streams;
 using System;
@@ -15,6 +16,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using static MapsOperations.DBLayer;
 
 namespace MapsOperations
 {
@@ -73,7 +75,7 @@ namespace MapsOperations
         {
             return new PBFOsmStreamSource(streamToImport);
         }
-        public void ImportOSM(string pathToOSM, DBLayer dal, bool forceIfTableEmpty = false)
+        public void ImportOSM(string pathToOSM, DBLayer dal, bool forceIfTableEmpty = false, MapBoundingBox mapBoundingBox = null)
         {
             using (var fileStream = File.OpenRead(pathToOSM))
             {
@@ -84,7 +86,7 @@ namespace MapsOperations
                 else
                     source = ImportOSMXML(fileStream);
 
-                dal.ImportNodes(source, true);
+                dal.ImportNodes(source, true, mapBoundingBox);
                 dal.ImportWays(source);
             }
         }
@@ -110,7 +112,7 @@ namespace MapsOperations
             {
                 foreach (var ngb in node.NeighbourNodes)
                 {
-                    var line = geomFactory.CreateLineString(new[] { new Coordinate(node.Latitude, node.Longitude), new Coordinate(ngb.Latitude, ngb.Longitude) });
+                    var line = geomFactory.CreateLineString(new[] { new Coordinate(node.Longitude, node.Latitude), new Coordinate(ngb.Longitude, ngb.Latitude) });
                     Feature feat = new Feature(line, t1);
                     features.Add(feat);
                 }
