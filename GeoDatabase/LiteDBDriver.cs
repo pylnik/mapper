@@ -35,7 +35,8 @@ namespace GeoDatabase
             var col = GetNodesCollection(_liteDB);
             foreach (var node in nodes)
             {
-                col.Delete(node);
+                if (!col.Delete(node.Id))
+                    Trace.TraceWarning($"Unable to delete node {node.Id}");
             }
         }
         public IEnumerable<GeoNode> GetAllNodes()

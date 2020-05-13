@@ -31,8 +31,7 @@ namespace MapsOperations
         {
             var allNodes = _liteDB.GetAllNodes();
             var emptyNodes = allNodes.Where(n => n.NeighbourNodes == null || n.NeighbourNodes.Count == 0);
-            _liteDB.GetAllNodes
-
+            _liteDB.DeleteNodes(emptyNodes);
         }
         public void ImportNodes(OsmStreamSource source, bool forceIfTableEmpty = false, MapBoundingBox mapBoundingBox = null)
         {

@@ -88,6 +88,7 @@ namespace MapsOperations
 
                 dal.ImportNodes(source, true, mapBoundingBox);
                 dal.ImportWays(source);
+                dal.ClearUnboundNodes();
             }
         }
         public void SaveToShape(DBLayer dBLayer, string shapeFileName)
