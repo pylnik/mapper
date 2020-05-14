@@ -23,6 +23,14 @@ namespace MapsOperations
         {
             _liteDB = new LiteDBDriver(dataBasePath);
         }
+        public GeoNode FillNode(GeoNode node)
+        {
+            return _liteDB.GetNodeById(node.Id);
+        }
+        public IEnumerable<GeoNode> GetAllNodes()
+        {
+            return _liteDB.GetAllNodes();
+        }
         public List<GeoNode> GetBoundNodes()
         {
             return _liteDB.GetAllNodes().Where(nd => nd.NeighbourNodes.Count > 0).ToList();

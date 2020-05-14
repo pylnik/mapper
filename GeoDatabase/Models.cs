@@ -10,11 +10,17 @@ namespace GeoDatabase
     {
         public GeoNode()
         {
-            NeighbourNodes = new List<GeoNode>();
+            NeighbourNodes = new List<NeighbourNode>();
         }
         public long OSMId { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public virtual List<GeoNode> NeighbourNodes { get; set; }
+        public virtual List<NeighbourNode> NeighbourNodes { get; set; }
+    }
+    public class NeighbourNode
+    {
+        public long NodeId { get; set; }
+        public long OSMId { get; set; }
+        public double Distance { get; set; }
     }
 }

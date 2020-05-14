@@ -1,4 +1,5 @@
 ﻿using LiteDB;
+using osm_importer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -22,8 +23,8 @@ namespace GeoDatabase
         private static void InitMapper()
         {
             var mapper = BsonMapper.Global;
-            mapper.Entity<GeoNode>()
-                .DbRef(x => x.NeighbourNodes, "GeoNode");
+            mapper.Entity<GeoNode>();
+            //.DbRef(x => x.NeighbourNodes, "GeoNode");
         }
         private void EnsureIndexes()
         {
@@ -39,12 +40,21 @@ namespace GeoDatabase
                     Trace.TraceWarning($"Unable to delete node {node.Id}");
             }
         }
+        public GeoNode GetNodeById(long id)
+        {
+            var col = GetNodesCollection(_liteDB);
+            return col.FindById(id);
+            //.Query()
+            //.Where(n => n.NeighbourNodes.Count > 0)
+            //.Include(x => x.NeighbourNodes)
+            //.ToList();
+        }
         public IEnumerable<GeoNode> GetAllNodes()
         {
             var col = GetNodesCollection(_liteDB);
             return col.Query()
                 .Where(n => n.NeighbourNodes.Count > 0)
-                .Include(x => x.NeighbourNodes)
+                //.Include(x => x.NeighbourNodes)
                 .ToList();
         }
         public GeoNode GetNodeByOSMID(long osmId)
@@ -67,8 +77,8 @@ namespace GeoDatabase
             var col = GetNodesCollection(_liteDB);
             var results =
                 col.Query()
-                .Where(n => start.NeighbourNodes.Exists(g => g.Id == n.Id))
-                .Include(x => x.NeighbourNodes)
+                .Where(n => start.NeighbourNodes.Exists(g => g.NodeId == n.Id))
+                //.Include(x => x.NeighbourNodes)
                 .ToList();
             return results;
         }
@@ -87,50 +97,51 @@ namespace GeoDatabase
                 Trace.WriteLine($"Unable to find node with OSM id {osmNode1}");
                 return;
             }
+            var distance = Haversine.Calculate(geoNode1.Latitude, geoNode1.Longitude, geoNode2.Latitude, geoNode2.Longitude);
             if (geoNode1.NeighbourNodes.FirstOrDefault(n => n.OSMId == osmNode2) == null)
             {
-                geoNode1.NeighbourNodes.Add(geoNode2);
+                geoNode1.NeighbourNodes.Add(new NeighbourNode { Distance = distance, NodeId = geoNode2.Id, OSMId = osmNode2 });
                 UpsertNode(geoNode1);
             }
             if (geoNode2.NeighbourNodes.FirstOrDefault(n => n.OSMId == osmNode1) == null)
             {
-                geoNode2.NeighbourNodes.Add(geoNode1);
+                geoNode2.NeighbourNodes.Add(new NeighbourNode { Distance = distance, NodeId = geoNode1.Id, OSMId = osmNode1 });
                 UpsertNode(geoNode2);
             }
         }
 
-        public void CreateDB()
-        {
-            ILiteCollection<GeoNode> col = GetNodesCollection(_liteDB);
+        //public void CreateDB()
+        //{
+        //    ILiteCollection<GeoNode> col = GetNodesCollection(_liteDB);
 
-            var node1 = new GeoNode { Latitude = 1, Longitude = 1 };
-            var node2 = new GeoNode { Latitude = 2, Longitude = 2 };
-            var node3 = new GeoNode { Latitude = 3, Longitude = 3 };
+        //    var node1 = new GeoNode { Latitude = 1, Longitude = 1 };
+        //    var node2 = new GeoNode { Latitude = 2, Longitude = 2 };
+        //    var node3 = new GeoNode { Latitude = 3, Longitude = 3 };
 
-            col.Upsert(node1);
-            col.Upsert(node2);
-            col.Upsert(node3);
+        //    col.Upsert(node1);
+        //    col.Upsert(node2);
+        //    col.Upsert(node3);
 
-            node1.NeighbourNodes.Add(node2);
-            node1.NeighbourNodes.Add(node3);
-            col.Upsert(node1);
-            node2.NeighbourNodes.Add(node1);
-            col.Upsert(node2);
-            node3.NeighbourNodes.Add(node1);
-            col.Upsert(node3);
+        //    node1.NeighbourNodes.Add(node2);
+        //    node1.NeighbourNodes.Add(node3);
+        //    col.Upsert(node1);
+        //    node2.NeighbourNodes.Add(node1);
+        //    col.Upsert(node2);
+        //    node3.NeighbourNodes.Add(node1);
+        //    col.Upsert(node3);
 
 
-            //// Index document using document Name property
-            //col.EnsureIndex(x => x.);
+        //    //// Index document using document Name property
+        //    //col.EnsureIndex(x => x.);
 
-            // Use LINQ to query documents (filter, sort, transform)
-            var results = col.Query()
-                .Where(x => x.NeighbourNodes.Count > 0)
-                .Include(x => x.NeighbourNodes)
-                .ToList();
+        //    // Use LINQ to query documents (filter, sort, transform)
+        //    var results = col.Query()
+        //        .Where(x => x.NeighbourNodes.Count > 0)
+        //        .Include(x => x.NeighbourNodes)
+        //        .ToList();
 
-            Trace.TraceInformation($"Result = {results.Count}");
-        }
+        //    Trace.TraceInformation($"Result = {results.Count}");
+        //}
 
         private static ILiteCollection<GeoNode> GetNodesCollection(LiteDatabase db)
         {
