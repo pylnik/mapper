@@ -29,11 +29,16 @@ namespace OSMManipulations
             if (!File.Exists(MapperDBFileName))
                 using (_dBLayer = new DBLayer(MapperDBFileName))
                     await Task.Run(() => _osmOperations.ImportOSM(PDBFileName, _dBLayer, mapBoundingBox: _areaOfInterest));
-            //var liteDb = new LiteDBDriver(MapperDBFileName);
+
             using (_dBLayer = new DBLayer(MapperDBFileName))
             {
-
+#warning works
                 _osmOperations.SaveToShape(_dBLayer, GetFullFileName("test.shp"));
+#warning
+                LoopComputer loopComputer = new LoopComputer { MinLength = 2, Dal = _dBLayer };
+                loopComputer.Compute();
+
+
                 //var db = _dBLayer.GeoContext;
                 //{
                 //    var nodesCount = db.Nodes.Count();
