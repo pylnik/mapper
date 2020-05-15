@@ -27,6 +27,10 @@ namespace MapsOperations
         {
             return _liteDB.GetNodeById(node.Id);
         }
+        public Dictionary<long, GeoNode> GetAllNodesDictionary()
+        {
+            return GetAllNodes().ToDictionary<GeoNode, long>(n => n.Id);
+        }
         public IEnumerable<GeoNode> GetAllNodes()
         {
             return _liteDB.GetAllNodes();
