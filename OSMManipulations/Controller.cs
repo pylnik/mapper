@@ -33,50 +33,24 @@ namespace OSMManipulations
             using (_dBLayer = new DBLayer(MapperDBFileName))
             {
 #warning works
-                _osmOperations.SaveToShape(_dBLayer, GetFullFileName("test.shp"));
+                //_osmOperations.SaveDBToShape(_dBLayer, GetFullFileName("test.shp"));
 #warning
+                var nodesCache = _dBLayer.GetAllNodesDictionary();
                 LoopComputer loopComputer = new LoopComputer { MinLength = 2, Dal = _dBLayer };
+                loopComputer.NewLoop += (loop) => LoopComputer_NewLoop(nodesCache, loop);
                 loopComputer.Compute();
-
-
-                //var db = _dBLayer.GeoContext;
-                //{
-                //    var nodesCount = db.Nodes.Count();
-                //    var waysCount = db.Ways.Count();
-                //    Console.WriteLine($"DB contains {nodesCount} nodes and {waysCount} ways");
-                //}
-                //return;
-                //Console.WriteLine($"Loading area from '{RouterDbAreaFileName}'");
-                //var area = await Task.Run(() => _osmOperations.LoadRouteDbFromFile(RouterDbAreaFileName));
-                //if (area == null)
-                //{
-                //    Console.WriteLine($"Area == null -> extract from big RouterDB '{RouteDbFileName}'");
-                //    var db = await Task.Run(() => _osmOperations.LoadRouteDbFromFile(RouteDbFileName));
-                //    if (db == null)
-                //    {
-                //        Console.WriteLine($"RouterDB is null -> create from PBF-file '{PDBFileName}'");
-                //        db = await Task.Run(() => _osmOperations.ImportWays(PDBFileName, RouteDbFileName));
-                //        Console.WriteLine($"RouterDB extracted");
-                //    }
-
-                //    area = await Task.Run(() => _osmOperations.ExtractAreaFromDb(db, 49.24f, 6.95f, 49.19f, 7.04f));
-                //    Console.WriteLine($"Area extracted");
-                //    await Task.Run(() => _osmOperations.SaveRouterDbToFile(area, RouterDbAreaFileName));
-                //    Console.WriteLine($"Area saved to '{RouterDbAreaFileName}'");
-                //}
-
-
-
-                //Console.WriteLine($"Save area to '{ShapeFileName}'");
-                //await Task.Run(() => _osmOperations.SaveToShapeFile(area, GetFullFileName(ShapeFileName)));
-                //Console.WriteLine($"Shape file saved");
-                //LoopComputer loopComputer = new LoopComputer();
-                //loopComputer.Compute(area);
-                //using (var sw = new StreamWriter(File.Create(GetFullFileName("test.json"))))
-                //{
-                //    area.WriteGeoJson(sw);
-                //}
             }
+        }
+
+        private void LoopComputer_NewLoop(Dictionary<long, GeoNode> allNodesCache, Tuple<GeoPath, GeoPath> obj)
+        {
+            var listToSave = new List<GeoNode>(obj.Item1.Nodes.Count + obj.Item2.Nodes.Count);
+            listToSave.AddRange(obj.Item1.Nodes);
+            var tail = obj.Item2.Nodes.ToList();
+            tail.Reverse();
+            listToSave.AddRange(tail);
+            var fName = obj.GetHashCode().ToString();
+            _osmOperations.SaveNodesToShape(GetFullFileName($@"loops\{fName}.shp"), allNodesCache, listToSave);
         }
 
         private static string GetFullFileName(string localFileName)
