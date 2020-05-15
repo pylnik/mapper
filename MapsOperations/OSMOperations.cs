@@ -91,10 +91,18 @@ namespace MapsOperations
                 dal.ClearUnboundNodes();
             }
         }
-        public void SaveToShape(DBLayer dBLayer, string shapeFileName)
+        public void SaveDBToShape(DBLayer dBLayer, string shapeFileName)
         {
-            string firstNameAttribute = "firstname";
-            string lastNameAttribute = "lastname";
+            var allNodesCache = dBLayer.GetAllNodesDictionary();
+            var nodes = dBLayer.GetBoundNodes();
+
+            SaveNodesToShape(shapeFileName, allNodesCache, nodes);
+        }
+
+        public void SaveNodesToShape(string shapeFileName, Dictionary<long, GeoNode> allNodesCache, List<GeoNode> nodesToSave)
+        {
+            string firstNameAttribute = "a";
+            string lastNameAttribute = "b";
 
             //create geometry factory
             IGeometryFactory geomFactory = NtsGeometryServices.Instance.CreateGeometryFactory();
@@ -107,26 +115,24 @@ namespace MapsOperations
 
             IList<Feature> features = new List<Feature>();
 
-            var allNodesCache = dBLayer.GetAllNodes();
-            var nodes = dBLayer.GetBoundNodes();
-            int counter = 0;
-            foreach (var node in nodes)
+            foreach (var node in nodesToSave)
             {
                 foreach (var ngb in node.NeighbourNodes)
                 {
-                    var ngbGeoNode = allNodesCache.FirstOrDefault(n => ngb.NodeId == n.Id);
+                    var ngbGeoNode = allNodesCache[ngb.NodeId];
                     var line = geomFactory.CreateLineString(new[] { new Coordinate(node.Longitude, node.Latitude), new Coordinate(ngbGeoNode.Longitude, ngbGeoNode.Latitude) });
                     Feature feat = new Feature(line, t1);
                     features.Add(feat);
                 }
             }
-
+            var dirName = Path.GetDirectoryName(shapeFileName);
+            if (!Directory.Exists(dirName))
+                Directory.CreateDirectory(dirName);
             var writer = new ShapefileDataWriter(shapeFileName)
             {
                 Header = ShapefileDataWriter.GetHeader(features[0], features.Count)
             };
             writer.Write(features);
-
         }
     }
 }
