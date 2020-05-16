@@ -44,6 +44,16 @@ namespace MapsOperations
                     var half2 = halfLoops[j];
                     if (half2.Nodes.Last().Id == lastId)
                     {
+                        var unique = 0;
+                        foreach (var n in half2.Nodes)
+                            if (halfLoop.Nodes.FirstOrDefault(n1 => n1.Id == n.Id) != null)
+                            {
+                                unique++;
+                                if (unique > 10)
+                                    break;
+                            }
+                        if (unique > 10)
+                            continue;
                         loops.Add(new Tuple<GeoPath, GeoPath>(halfLoop, half2));
                         NewLoop?.Invoke(loops.Last());
                     }
@@ -63,7 +73,9 @@ namespace MapsOperations
         {
             if (curLength > _minHalfLength)
             {
-                HalfPaths.Add(new GeoPath { Nodes = visitedNodes, Length = (float)curLength });
+                GeoPath path = new GeoPath { Nodes = visitedNodes, Length = (float)curLength };
+                HalfPaths.Add(path);
+                //NewLoop?.Invoke(new Tuple<GeoPath, GeoPath>(path, path));
                 return;
             }
             GeoNode nodeFrom = visitedNodes.Last();
