@@ -107,23 +107,21 @@ namespace MapsOperations
             //create geometry factory
             IGeometryFactory geomFactory = NtsGeometryServices.Instance.CreateGeometryFactory();
 
-            //create the default table with fields - alternately use DBaseField classes
-            AttributesTable t1 = new AttributesTable();
-            t1.AddAttribute(firstNameAttribute, "1");
-            t1.AddAttribute(lastNameAttribute, "2");
-
 
             IList<Feature> features = new List<Feature>();
 
-            foreach (var node in nodesToSave)
+            for (int i = 0; i < nodesToSave.Count - 1; i++)
             {
-                foreach (var ngb in node.NeighbourNodes)
-                {
-                    var ngbGeoNode = allNodesCache[ngb.NodeId];
-                    var line = geomFactory.CreateLineString(new[] { new Coordinate(node.Longitude, node.Latitude), new Coordinate(ngbGeoNode.Longitude, ngbGeoNode.Latitude) });
-                    Feature feat = new Feature(line, t1);
-                    features.Add(feat);
-                }
+                GeoNode node1 = nodesToSave[i];
+                GeoNode node2 = nodesToSave[i + 1];
+                //var ngbGeoNode = allNodesCache[ngb.NodeId];
+                var line = geomFactory.CreateLineString(new[] { new Coordinate(node1.Longitude, node1.Latitude), new Coordinate(node2.Longitude, node2.Latitude) });
+                AttributesTable t1 = new AttributesTable();
+                t1.AddAttribute(firstNameAttribute, node1.OSMId);
+                t1.AddAttribute(lastNameAttribute, node2.OSMId);
+
+                Feature feat = new Feature(line, t1);
+                features.Add(feat);
             }
             var dirName = Path.GetDirectoryName(shapeFileName);
             if (!Directory.Exists(dirName))
